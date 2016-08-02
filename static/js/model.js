@@ -7,6 +7,7 @@ window.WH = window.WH || {};
         
         var that = specs.that,
             patterns = [],
+            selectedPattern = null,
             
             /** 
              * Create a new pattern data object.
@@ -17,7 +18,8 @@ window.WH = window.WH || {};
                     y: specs.y || 0,
                     x: specs.z || 0,
                     position3d: specs.position3d || null,
-                    object3d: null
+                    object3d: null,
+                    isSelected: false
                 };
                 
                 if (ptrn.position3d) {
@@ -29,6 +31,24 @@ window.WH = window.WH || {};
                 patterns.push(ptrn);
             },
             
+            setSelectedPatternByProperty = function(propKey, propValue) {
+                var i, ptrn, n = patterns.length;
+                for (i = 0; i < n; i++) {
+                    ptrn =  patterns[i];
+                    if (ptrn[propKey] === propValue) {
+                        if (ptrn !== selectedPattern) {
+                            if (selectedPattern) {
+                                selectedPattern.isSelected = false;
+                            }
+                            selectedPattern = ptrn;
+                            selectedPattern.isSelected = true;
+                            return true;
+                        }
+                        return false;
+                    }
+                }
+            },
+            
             /**
              * @return {array} All pattern data.
              */
@@ -37,6 +57,7 @@ window.WH = window.WH || {};
             };
             
         that.createPattern = createPattern;
+        that.setSelectedPatternByProperty = setSelectedPatternByProperty;
         that.getPatterns = getPatterns;
         return that;
     }

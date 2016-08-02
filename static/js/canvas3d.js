@@ -72,7 +72,7 @@ window.WH = window.WH || {};
                     elY = e.clientY - canvasRect.top,
                     vpX = (elX / canvasRect.width) * 2 - 1,
                     vpY = (elY / canvasRect.height) * -2 + 1,
-                    i, vector, raycaster, intersects, intersected, wheel;
+                    i, vector, raycaster, intersects, intersected, wheel, patternData;
                 
                 vector = new THREE.Vector3();
                 vector.set(vpX, vpY, 0.5);
@@ -85,7 +85,7 @@ window.WH = window.WH || {};
                 if (intersects.length) {
                     intersected = intersects[0];
                     wheel = getOuterParentObject(intersected);
-                    console.log('touchstart', intersected.object.name, wheel.name);
+                    isDirty = model.setSelectedPatternByProperty('object3d', wheel);
                 }
             },
             
@@ -223,7 +223,11 @@ window.WH = window.WH || {};
                         object3d.position.set(ptrn.x, ptrn.y, ptrn.z);
                         scene.add(object3d);
                         ptrn.object3d = object3d;
+                        model.setSelectedPatternByProperty('object3d', object3d);
+                        isDirty = true;
                     }
+                    
+                    ptrn.object3d.getObjectByName('select').visible = ptrn.isSelected;
                 }
                 
                 renderer.render(scene, camera);
