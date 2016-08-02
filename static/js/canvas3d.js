@@ -12,7 +12,7 @@ window.WH = window.WH || {};
             renderer,
             scene,
             camera,
-            circle,
+            wheel,
             isDirty = false,
             doubleClickCounter = 0,
             doubleClickDelay = 300,
@@ -72,7 +72,7 @@ window.WH = window.WH || {};
                     elY = e.clientY - canvasRect.top,
                     vpX = (elX / canvasRect.width) * 2 - 1,
                     vpY = (elY / canvasRect.height) * -2 + 1,
-                    vector, raycaster, intersects;
+                    i, vector, raycaster, intersects, intersected, wheel;
                 
                 vector = new THREE.Vector3();
                 vector.set(vpX, vpY, 0.5);
@@ -80,9 +80,13 @@ window.WH = window.WH || {};
                 
                 // ray = new THREE.Ray(camera.position, vector.subSelf(camera.position).normalize());
                 raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-                intersects = raycaster.intersectObjects(scene.children, false);
+                intersects = raycaster.intersectObjects(scene.children, true);
                 
-                console.log('touchstart', scene.children.length, intersects.length);
+                if (intersects.length) {
+                    intersected = intersects[0];
+                    wheel = getOuterParentObject(intersected);
+                    console.log('touchstart', intersected.object.name, wheel.name);
+                }
             },
             
             /**
@@ -138,10 +142,30 @@ window.WH = window.WH || {};
                 light.position.set(0, 0, 1);
                 scene.add(light);
                 
-                circle = createShapeCircle();
+                wheel = createWheel();
                 
                 // render it
                 renderer.render(scene, camera);
+            },
+            
+            createWheel = function() {
+                var wheel = new THREE.Object3D(),
+                    hitarea = createShapeCircle(),
+                    circle = createLineCircle(),
+                    selectCircle = circle.clone();
+                
+                wheel.name = 'wheel';
+                hitarea.name = 'hitarea';
+                circle.name = 'circle';
+                
+                selectCircle.scale.set(0.5, 0.5, 1);
+                selectCircle.visible = false;
+                selectCircle.name = 'select';
+                    
+                wheel.add(hitarea);
+                wheel.add(circle);
+                wheel.add(selectCircle);
+                return wheel;
             },
             
             createShapeCircle = function() {
@@ -152,11 +176,11 @@ window.WH = window.WH || {};
                         transparent: true
                     }),
                     circleGeometry = new THREE.CircleGeometry(radius, numSegments);              
-                material.opacity = 0.1;
+                material.opacity = 0.01;
                 return new THREE.Mesh( circleGeometry, material );
             },
             
-            createLineCircle2 = function() {
+            createLineCircle = function() {
                 var radius = 10,
                     numSegments = 64,
                     material = new THREE.LineBasicMaterial({
@@ -170,41 +194,14 @@ window.WH = window.WH || {};
             },
             
             /**
-             * Create a line circle
+             * Recursive function to get top level object of a group.
+             * @param {object} object3d An Three.js Object3D.
              */
-            createLineCircle = function() {
-                var geometry,
-                    vector,
-                    material,
-                    circle,
-                    radius = 10,
-                    numSegments = 120,
-                    pointIndex,
-                    i, x, y,
-                    twoPi = Math.PI * 2;
-                
-                // create an empty geometry object to hold the line vertex data
-                geometry = new THREE.Geometry();
-                
-                // create points along the circumference of a circle with radius
-                for (i = 0; i <= numSegments; i++) {
-                    pointIndex = i % numSegments;
-                    x = radius * Math.cos((pointIndex / numSegments) * twoPi);
-                    y = radius * Math.sin((pointIndex / numSegments) * twoPi);
-                    vector = new THREE.Vector3(x, y, 0);
-                    geometry.vertices.push(vector);
+            getOuterParentObject = function(object3d) {
+                if (object3d.object && object3d.object.parent) {
+                    return getOuterParentObject(object3d.object.parent);
                 }
-                
-                // create a line material
-                material = new THREE.LineBasicMaterial({
-                    color: 0xdddddd,
-                    linewidth: 3
-                });
-                
-                // create the line circle
-                circle = new THREE.Line(geometry, material);
-                
-                return circle;
+                return object3d;
             },
             
             /**
@@ -222,7 +219,7 @@ window.WH = window.WH || {};
                     
                     // create new 3D object if it misses
                     if (!ptrn.object3d) {
-                        object3d = circle.clone();
+                        object3d = wheel.clone();
                         object3d.position.set(ptrn.x, ptrn.y, ptrn.z);
                         scene.add(object3d);
                         ptrn.object3d = object3d;
