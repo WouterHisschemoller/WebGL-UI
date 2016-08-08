@@ -6049,7 +6049,7 @@ THREE.Ray.prototype = {
 	},
 
 	distanceToPlane: function ( plane ) {
-
+		
 		var denominator = plane.normal.dot( this.direction );
 
 		if ( denominator === 0 ) {
@@ -41758,4 +41758,3 @@ THREE.MorphBlendMesh.prototype.update = function ( delta ) {
 	}
 
 };
-

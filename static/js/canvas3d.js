@@ -13,11 +13,20 @@ window.WH = window.WH || {};
             scene,
             camera,
             wheel,
+            plane,
+            mouse = new THREE.Vector2(),
+            raycaster = new THREE.Raycaster(),
+            intersection = new THREE.Vector3(),
+            offset = new THREE.Vector3(),
+            objects = [],
+            dragObject,
+            controls,
+            INTERSECTED,
+            isTouchDevice = 'ontouchstart' in document.documentElement,
             isDirty = false,
             doubleClickCounter = 0,
             doubleClickDelay = 300,
             doubleClickTimer,
-            isTouchDevice = 'ontouchstart' in document.documentElement,
         
             /**
              * Type of events to use, touch or mouse
@@ -36,6 +45,8 @@ window.WH = window.WH || {};
             initDOMEvents = function() {
                 renderer.domElement.addEventListener(eventType.click, onClick);
                 renderer.domElement.addEventListener(eventType.start, onTouchStart);
+                renderer.domElement.addEventListener(eventType.move, dragMove);
+                renderer.domElement.addEventListener(eventType.end, dragEnd);
                 // prevent system doubleclick to interfere with the custom doubleclick
                 renderer.domElement.addEventListener('dblclick', function(e) {e.preventDefault();});
             },
@@ -49,15 +60,13 @@ window.WH = window.WH || {};
                 doubleClickCounter ++;
                 if (doubleClickCounter == 1) {
                     doubleClickTimer = setTimeout(function() {
-                        // single click
                         doubleClickCounter = 0;
-                        // not used yet
+                        // implement single click behaviour here
                     }, doubleClickDelay);
                 } else {
-                    // doubleclick
                     clearTimeout(doubleClickTimer);
                     doubleClickCounter = 0;
-                    // create new pattern
+                    // implement double click behaviour here
                     onDoubleClick(e);
                 }
             },
@@ -66,26 +75,17 @@ window.WH = window.WH || {};
              * Start dragging a pattern.
              */
             onTouchStart = function(e) {
-                // translate page to canvas to viewport coordinates
-                // viewport x and y are from -1.0 to 1.0
-                var elX = e.clientX - canvasRect.left,
-                    elY = e.clientY - canvasRect.top,
-                    vpX = (elX / canvasRect.width) * 2 - 1,
-                    vpY = (elY / canvasRect.height) * -2 + 1,
-                    i, vector, raycaster, intersects, intersected, wheel, patternData;
-                
-                vector = new THREE.Vector3();
-                vector.set(vpX, vpY, 0.5);
-                vector.unproject(camera);
-                
-                // ray = new THREE.Ray(camera.position, vector.subSelf(camera.position).normalize());
-                raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-                intersects = raycaster.intersectObjects(scene.children, true);
-                
+                var intersects, outerObject;
+                // update picking ray.
+                updateMouseRay(e, canvasRect, mouse, raycaster, camera);
+                // get intersected objects
+                intersects = raycaster.intersectObjects(objects, true);
+                // select first wheel in the intersects
                 if (intersects.length) {
-                    intersected = intersects[0];
-                    wheel = getOuterParentObject(intersected);
-                    isDirty = model.setSelectedPatternByProperty('object3d', wheel);
+                    // get topmost parent of closest object
+                    outerObject = getOuterParentObject(intersects[0]);
+                    isDirty = model.setSelectedPatternByProperty('object3d', outerObject);
+                    dragStart(outerObject, mouse);
                 }
             },
             
@@ -94,28 +94,75 @@ window.WH = window.WH || {};
              * Create a new pattern at the location of the doubleclick.
              */
             onDoubleClick = function(e) {
-                // translate page to canvas to viewport coordinates
-                // viewport x and y are from -1.0 to 1.0
-                var elX = e.clientX - canvasRect.left,
-                    elY = e.clientY - canvasRect.top,
-                    vpX = (elX / canvasRect.width) * 2 - 1,
-                    vpY = (elY / canvasRect.height) * -2 + 1,
-                    vector, direction, distance, position;
+                // update picking ray.
+                updateMouseRay(e, canvasRect, mouse, raycaster, camera);
+                // if ray intersects plane, store point in vector 'intersection'
+                if (raycaster.ray.intersectPlane(plane, intersection)) {
+                    // create a new pattern at the found position
+                    model.createPattern({
+                        position3d: intersection
+                    });
+                    isDirty = true;
+                }
+            },
+            
+            /**
+             * Initialise object dragging.
+             * @param {object} object3d The Object3D to be dragged.
+             */
+            dragStart = function(object3d, mouse) {
+                dragObject = object3d;
+                // update the picking ray with the camera and mouse position
+                raycaster.setFromCamera(mouse, camera);
+                // if ray intersects plane, store point in vector 'intersection'
+                if (raycaster.ray.intersectPlane(plane, intersection)) {
+                    // offset is the intersection point minus object position,
+                    // so distance from object to mouse
+                    offset.copy(intersection).sub(object3d.position);
+                    containerEl.style.cursor = 'move';
+                    controls.enabled = false;
+                }
+            },
+            
+            dragMove = function(e) {
+                e.preventDefault();
+                // update picking ray.
+                updateMouseRay(e, canvasRect, mouse, raycaster, camera);
+                // if ray intersects plane, store point in vector 'intersection'
+                if (dragObject) {
+                    if (raycaster.ray.intersectPlane(plane, intersection)) {
+                        dragObject.position.copy(intersection.sub(offset));
+                        isDirty = true;
+                    }
+                    return;
+                }
                 
-                // translate viewport to 3D world position at z == 0
-                // @see http://stackoverflow.com/questions/13055214/mouse-canvas-x-y-to-three-js-world-x-y-z
-                vector = new THREE.Vector3();
-                vector.set(vpX, vpY, 0.5);
-                vector.unproject(camera);
-                
-                direction = vector.sub(camera.position).normalize();
-                distance = - camera.position.z / direction.z;
-                position = camera.position.clone().add(direction.multiplyScalar(distance));
-                
-                model.createPattern({
-                    position3d: position
-                });
-                isDirty = true;
+                // when not dragging
+                var intersects = raycaster.intersectObjects(objects, true);
+                if (intersects.length > 0) {
+                    if (INTERSECTED != intersects[0].object) {
+                        INTERSECTED = intersects[0].object;
+                        // i don't understand this. set the plane based on 
+                        //   1. where the camera is pointing to
+                        //   2. the object under the mouse
+                        // plane.setFromNormalAndCoplanarPoint(
+                        //     camera.getWorldDirection(plane.normal),
+                        //     INTERSECTED.position);
+                    }
+                    containerEl.style.cursor = 'pointer';
+                } else {
+                    INTERSECTED = null;
+                    containerEl.style.cursor = 'auto';
+                }
+            },
+            
+            dragEnd = function(e) {
+                e.preventDefault();
+                if (INTERSECTED) {
+                    dragObject = null;
+                }
+                containerEl.style.cursor = 'auto';
+                controls.enabled = true;
             },
             
             /**
@@ -142,30 +189,46 @@ window.WH = window.WH || {};
                 light.position.set(0, 0, 1);
                 scene.add(light);
                 
+				controls = new THREE.TrackballControls(camera);
+				controls.rotateSpeed = 1.0;
+				controls.zoomSpeed = 1.2;
+				controls.panSpeed = 0.8;
+				controls.noZoom = false;
+				controls.noPan = false;
+				controls.staticMoving = true;
+				controls.dynamicDampingFactor = 0.3;
+                
+                plane = new THREE.Plane();
+                plane.setFromNormalAndCoplanarPoint(
+                    camera.getWorldDirection(plane.normal), 
+                    new THREE.Vector3(0,0,0));
+                
                 wheel = createWheel();
                 
-                // render it
-                renderer.render(scene, camera);
+                // render world
+                isDirty = true;
             },
             
+            /**
+             * Create combined Object3D of wheel.
+             * @return {object} Object3D of drag plane.
+             */
             createWheel = function() {
-                var wheel = new THREE.Object3D(),
-                    hitarea = createShapeCircle(),
+                var hitarea = createShapeCircle(),
                     circle = createLineCircle(),
                     selectCircle = circle.clone();
                 
-                wheel.name = 'wheel';
-                hitarea.name = 'hitarea';
                 circle.name = 'circle';
+                circle.scale.set(0.85, 0.85, 1);
                 
+                selectCircle.name = 'select';
                 selectCircle.scale.set(0.5, 0.5, 1);
                 selectCircle.visible = false;
-                selectCircle.name = 'select';
-                    
-                wheel.add(hitarea);
-                wheel.add(circle);
-                wheel.add(selectCircle);
-                return wheel;
+                
+                hitarea.name = 'hitarea';
+                hitarea.add(circle);
+                hitarea.add(selectCircle);
+                return hitarea;
             },
             
             createShapeCircle = function() {
@@ -175,9 +238,9 @@ window.WH = window.WH || {};
                         color: 0x000000,
                         transparent: true
                     }),
-                    circleGeometry = new THREE.CircleGeometry(radius, numSegments);              
+                    geometry = new THREE.CircleGeometry(radius, numSegments);              
                 material.opacity = 0.01;
-                return new THREE.Mesh( circleGeometry, material );
+                return new THREE.Mesh( geometry, material );
             },
             
             createLineCircle = function() {
@@ -198,10 +261,29 @@ window.WH = window.WH || {};
              * @param {object} object3d An Three.js Object3D.
              */
             getOuterParentObject = function(object3d) {
-                if (object3d.object && object3d.object.parent) {
+                if (object3d.object && object3d.object.parent && object3d.object.parent.type !== 'Scene') {
                     return getOuterParentObject(object3d.object.parent);
                 }
+                if (object3d.object) {
+                    return object3d.object;
+                }
                 return object3d;
+            },
+            
+            /**
+             * Set a raycaster's ray to point from a camera to the mouse postion.
+             * @param {event} mouseEvent Event rom which to get the mouse coordinates.
+             * @param {object} elementRect Rect object contains DOM element position and size.
+             * @param {object} mouseVector Vector2 contains mouse position translated to viewport.
+             * @param {object} raycaster 3D Raycaster object.
+             * @param {object} camera 3D Camera object.
+             */
+            updateMouseRay = function(mouseEvent, elementRect, mouseVector, raycaster, camera) {
+                // update mouse vector with mouse coordinated translated to viewport
+                mouseVector.x = ((mouseEvent.clientX - elementRect.left) / elementRect.width ) * 2 - 1;
+				mouseVector.y = - ((mouseEvent.clientY - elementRect.top) / elementRect.height ) * 2 + 1;
+                // update the picking ray with the camera and mouse position
+                raycaster.setFromCamera(mouseVector, camera);
             },
             
             /**
@@ -224,13 +306,12 @@ window.WH = window.WH || {};
                         scene.add(object3d);
                         ptrn.object3d = object3d;
                         model.setSelectedPatternByProperty('object3d', object3d);
+                        objects.push(object3d);
                         isDirty = true;
                     }
                     
                     ptrn.object3d.getObjectByName('select').visible = ptrn.isSelected;
                 }
-                
-                renderer.render(scene, camera);
             },
             
             /**
@@ -241,6 +322,8 @@ window.WH = window.WH || {};
                     isDirty = false;
                     draw();
                 }
+                controls.update();
+                renderer.render(scene, camera);
                 requestAnimationFrame(run.bind(this));
             };
         
