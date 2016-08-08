@@ -169,7 +169,8 @@ window.WH = window.WH || {};
              * Initialise the WebGL 3D world.
              */
             initWorld = function() {
-                var light;
+                var light,
+                    lineMaterial;
                 
                 renderer = new THREE.WebGLRenderer({
                     antialias: true
@@ -202,8 +203,13 @@ window.WH = window.WH || {};
                 plane.setFromNormalAndCoplanarPoint(
                     camera.getWorldDirection(plane.normal), 
                     new THREE.Vector3(0,0,0));
+                    
+                lineMaterial = new THREE.LineBasicMaterial({
+                    color: 0xeeeeee,
+                    linewidth: 3
+                });
                 
-                wheel = createWheel();
+                wheel = createWheel(lineMaterial);
                 
                 // render world
                 isDirty = true;
@@ -211,23 +217,28 @@ window.WH = window.WH || {};
             
             /**
              * Create combined Object3D of wheel.
+             * @param {object} lineMaterial Default line drawing material.
              * @return {object} Object3D of drag plane.
              */
-            createWheel = function() {
+            createWheel = function(lineMaterial) {
                 var hitarea = createShapeCircle(),
-                    circle = createLineCircle(),
+                    circle = createLineCircle(lineMaterial),
+                    pointer = createPointer(lineMaterial),
                     selectCircle = circle.clone();
                 
                 circle.name = 'circle';
-                circle.scale.set(0.85, 0.85, 1);
+                circle.scale.set(0.3, 0.3, 1);
                 
                 selectCircle.name = 'select';
-                selectCircle.scale.set(0.5, 0.5, 1);
+                selectCircle.scale.set(0.2, 0.2, 1);
                 selectCircle.visible = false;
+                
+                pointer.name = 'pointerPlay';
                 
                 hitarea.name = 'hitarea';
                 hitarea.add(circle);
                 hitarea.add(selectCircle);
+                hitarea.add(pointer);
                 return hitarea;
             },
             
@@ -243,17 +254,34 @@ window.WH = window.WH || {};
                 return new THREE.Mesh( geometry, material );
             },
             
-            createLineCircle = function() {
+            /**
+             * 
+             * @param {object} lineMaterial Default line drawing material.
+             */
+            createLineCircle = function(lineMaterial) {
                 var radius = 10,
                     numSegments = 64,
-                    material = new THREE.LineBasicMaterial({
-                        color: 0xdddddd,
-                        linewidth: 3
-                    }),
                     geometry = new THREE.CircleGeometry(radius, numSegments);
                 
                 geometry.vertices.shift();
-                return new THREE.Line(geometry, material);
+                return new THREE.Line(geometry, lineMaterial);
+            },
+            
+            /**
+             * 
+             * @param {object} lineMaterial Default line drawing material.
+             * @return {object} Line 3D object.
+             */
+            createPointer = function(lineMaterial) {
+                var line, 
+                    geometry = new THREE.Geometry();
+                geometry.vertices.push(
+                	new THREE.Vector3(-2.9, 0.7, 0),
+                	new THREE.Vector3(0, 8, 0),
+                	new THREE.Vector3(2.9, 0.7, 0)
+                );
+                line = new THREE.Line(geometry, lineMaterial);
+                return line;
             },
             
             /**
