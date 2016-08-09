@@ -11,6 +11,8 @@ window.WH = window.WH || {};
             
             /** 
              * Create a new pattern data object.
+             * @param {object} specs Pattern settings.
+             * @return {object} The created pattern object.
              */
             createPattern = function(specs) {
                 var ptrn = {
@@ -22,6 +24,7 @@ window.WH = window.WH || {};
                     
                     object3d: specs.object3d || null,
                     pointer3d: specs.pointer3d || null,
+                    dots3d: specs.dots3d || null,
                     position3d: specs.position3d || null,
                     
                     // position and duration within the pattern
@@ -32,6 +35,8 @@ window.WH = window.WH || {};
                 };
                 
                 patterns.push(ptrn);
+                
+                return ptrn;
             },
             
             /**
@@ -45,6 +50,10 @@ window.WH = window.WH || {};
                 }
             },
             
+            /**
+             * Select pattern by the value of one of its properties.
+             * @return {boolean} True if exists and differs from the previous.
+             */
             setSelectedPatternByProperty = function(propKey, propValue) {
                 var i, ptrn, n = patterns.length;
                 for (i = 0; i < n; i++) {

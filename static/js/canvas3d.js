@@ -13,6 +13,7 @@ window.WH = window.WH || {};
             scene,
             camera,
             wheel,
+            circle,
             plane,
             mouse = new THREE.Vector2(),
             raycaster = new THREE.Raycaster(),
@@ -170,18 +171,48 @@ window.WH = window.WH || {};
              * @param {object} position3d Vector3 position in the world.
              */
             createWheelAndPattern = function(position3d) {
-                var object3d = wheel.clone();
+                var ptrn,
+                    object3d = wheel.clone();
                 object3d.position.copy(position3d);
                 scene.add(object3d);
                 objects.push(object3d);
                 // create a new pattern at the found position
-                model.createPattern({
+                ptrn = model.createPattern({
                     object3d: object3d,
                     pointer3d: object3d.getObjectByName('pointer'),
+                    dots3d: object3d.getObjectByName('dots'),
                     position3d: position3d,
                     duration: 1000 + Math.floor(Math.random() * 1000)
                 });
                 model.setSelectedPatternByProperty('object3d', object3d);
+                updateDots(ptrn);
+            },
+            
+            /**
+             * Update the pattern dots.
+             * @param {object} ptrn Pattern data object.
+             */
+            updateDots = function(ptrn) {
+                var dots = ptrn.dots3d,
+                    i, n, dot, rad, radius;
+                
+                // remove all existing dots
+                n = dots.children.length;
+                for (i = 0; i < n; i++) {
+                    dots.remove(dots.children[0]);
+                }
+                
+                // add new dots
+                radius = 8;
+                n = ptrn.steps;
+                for (i = 0; i < n; i++) {
+                    rad = TWO_PI * (i / n);
+                    dot = circle.clone();
+                    dot.scale.set(0.1, 0.1, 1);
+                    dot.translateX(Math.cos(rad) * radius);
+                    dot.translateY(Math.sin(rad) * radius);
+                    dots.add(dot);
+                }
             },
             
             /**
@@ -228,6 +259,7 @@ window.WH = window.WH || {};
                     linewidth: 3
                 });
                 
+                circle = createLineCircle(lineMaterial)
                 wheel = createWheel(lineMaterial);
                 
                 // render world
@@ -241,12 +273,15 @@ window.WH = window.WH || {};
              */
             createWheel = function(lineMaterial) {
                 var hitarea = createShapeCircle(),
-                    circle = createLineCircle(lineMaterial),
+                    centreCircle = circle.clone(),
+                    selectCircle = circle.clone(),
                     pointer = createPointer(lineMaterial),
-                    selectCircle = circle.clone();
+                    dots = new THREE.Object3D();
+                    
+                hitarea.name = 'hitarea';
                 
-                circle.name = 'circle';
-                circle.scale.set(0.3, 0.3, 1);
+                centreCircle.name = 'circle';
+                centreCircle.scale.set(0.3, 0.3, 1);
                 
                 selectCircle.name = 'select';
                 selectCircle.scale.set(0.2, 0.2, 1);
@@ -254,10 +289,12 @@ window.WH = window.WH || {};
                 
                 pointer.name = 'pointer';
                 
-                hitarea.name = 'hitarea';
-                hitarea.add(circle);
+                dots.name = 'dots';
+                
+                hitarea.add(centreCircle);
                 hitarea.add(selectCircle);
                 hitarea.add(pointer);
+                hitarea.add(dots);
                 return hitarea;
             },
             
@@ -310,6 +347,8 @@ window.WH = window.WH || {};
             getOuterParentObject = function(object3d) {
                 if (object3d.object && object3d.object.parent && object3d.object.parent.type !== 'Scene') {
                     return getOuterParentObject(object3d.object.parent);
+                } else if (object3d.parent && object3d.parent.type !== 'Scene') {
+                    return getOuterParentObject(object3d.parent);
                 }
                 if (object3d.object) {
                     return object3d.object;
