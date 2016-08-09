@@ -13,7 +13,9 @@ window.WH = window.WH || {};
             scene,
             camera,
             wheel,
-            circle,
+            circleOutline,
+            circleFilled,
+            dotFilled,
             plane,
             mouse = new THREE.Vector2(),
             raycaster = new THREE.Raycaster(),
@@ -29,6 +31,7 @@ window.WH = window.WH || {};
             doubleClickDelay = 300,
             doubleClickTimer,
             TWO_PI = Math.PI * 2,
+            defaultColor = 0xcccccc,
         
             /**
              * Type of events to use, touch or mouse
@@ -207,7 +210,11 @@ window.WH = window.WH || {};
                 n = ptrn.steps;
                 for (i = 0; i < n; i++) {
                     rad = TWO_PI * (i / n);
-                    dot = circle.clone();
+                    if (ptrn.euclidPattern[i]) {
+                        dot = dotFilled.clone();
+                    } else {
+                        dot = circleOutline.clone();
+                    }
                     dot.scale.set(0.1, 0.1, 1);
                     dot.translateX(Math.cos(rad) * radius);
                     dot.translateY(Math.sin(rad) * radius);
@@ -255,12 +262,17 @@ window.WH = window.WH || {};
                     new THREE.Vector3(0,0,0));
                     
                 lineMaterial = new THREE.LineBasicMaterial({
-                    color: 0xeeeeee,
+                    color: defaultColor,
                     linewidth: 3
                 });
                 
-                circle = createLineCircle(lineMaterial)
+                circleOutline = createLineCircle(lineMaterial);
+                circleFilled = createShapeCircle(lineMaterial);
                 wheel = createWheel(lineMaterial);
+                
+                dotFilled = new THREE.Object3D();
+                dotFilled.add(circleFilled.clone());
+                dotFilled.add(circleOutline.clone());
                 
                 // render world
                 isDirty = true;
@@ -273,14 +285,12 @@ window.WH = window.WH || {};
              */
             createWheel = function(lineMaterial) {
                 var hitarea = createShapeCircle(),
-                    centreCircle = circle.clone(),
-                    selectCircle = circle.clone(),
+                    centreCircle = circleOutline.clone(),
+                    selectCircle = circleOutline.clone(),
                     pointer = createPointer(lineMaterial),
                     dots = new THREE.Object3D();
-                    
-                hitarea.name = 'hitarea';
                 
-                centreCircle.name = 'circle';
+                centreCircle.name = 'circleOutline';
                 centreCircle.scale.set(0.3, 0.3, 1);
                 
                 selectCircle.name = 'select';
@@ -291,6 +301,8 @@ window.WH = window.WH || {};
                 
                 dots.name = 'dots';
                 
+                hitarea.name = 'hitarea';
+                hitarea.material.opacity = 0.0;
                 hitarea.add(centreCircle);
                 hitarea.add(selectCircle);
                 hitarea.add(pointer);
@@ -298,15 +310,18 @@ window.WH = window.WH || {};
                 return hitarea;
             },
             
+            /**
+             * 
+             */
             createShapeCircle = function() {
                 var radius = 10,
                     numSegments = 8,
                     material = new THREE.MeshBasicMaterial({
-                        color: 0x000000,
+                        color: defaultColor,
                         transparent: true
                     }),
                     geometry = new THREE.CircleGeometry(radius, numSegments);              
-                material.opacity = 0.01;
+                material.opacity = 1.0;
                 return new THREE.Mesh( geometry, material );
             },
             
