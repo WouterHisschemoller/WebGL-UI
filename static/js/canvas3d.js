@@ -346,10 +346,11 @@ window.WH = window.WH || {};
              * Run clock and watch for redraw requests.
              */
             run = function() {
-                if (isDirty) {
-                    isDirty = false;
+                model.update(Date.now());
+                // if (isDirty) {
+                    // isDirty = false;
                     draw();
-                }
+                // }
                 controls.update();
                 renderer.render(scene, camera);
                 requestAnimationFrame(run.bind(this));
