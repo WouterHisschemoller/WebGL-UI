@@ -27,6 +27,7 @@ window.WH = window.WH || {};
             doubleClickCounter = 0,
             doubleClickDelay = 300,
             doubleClickTimer,
+            TWO_PI = Math.PI * 2,
         
             /**
              * Type of events to use, touch or mouse
@@ -98,10 +99,8 @@ window.WH = window.WH || {};
                 updateMouseRay(e);
                 // if ray intersects plane, store point in vector 'intersection'
                 if (raycaster.ray.intersectPlane(plane, intersection)) {
-                    // create a new pattern at the found position
-                    model.createPattern({
-                        position3d: intersection
-                    });
+                    // create a new wheel 3D object
+                    createWheelAndPattern(intersection);
                     isDirty = true;
                 }
             },
@@ -163,6 +162,25 @@ window.WH = window.WH || {};
                 }
                 containerEl.style.cursor = 'auto';
                 controls.enabled = true;
+            },
+            
+            /**
+             * Create a new wheel mesh in the 3D world and  
+             * tell the model to create a pattern.
+             * @param {object} position3d Vector3 position in the world.
+             */
+            createWheelAndPattern = function(position3d) {
+                var object3d = wheel.clone();
+                object3d.position.copy(position3d);
+                scene.add(object3d);
+                objects.push(object3d);
+                // create a new pattern at the found position
+                model.createPattern({
+                    object3d: object3d,
+                    position3d: position3d,
+                    duration: 1000 + Math.floor(Math.random() * 1000)
+                });
+                model.setSelectedPatternByProperty('object3d', object3d);
             },
             
             /**
@@ -322,19 +340,8 @@ window.WH = window.WH || {};
                 
                 for (i = 0; i < numPatterns; i++) {
                     ptrn = patterns[i];
-                    
-                    // create new 3D object if it misses
-                    if (!ptrn.object3d) {
-                        object3d = wheel.clone();
-                        object3d.position.set(ptrn.x, ptrn.y, ptrn.z);
-                        scene.add(object3d);
-                        ptrn.object3d = object3d;
-                        model.setSelectedPatternByProperty('object3d', object3d);
-                        objects.push(object3d);
-                        isDirty = true;
-                    }
-                    
                     ptrn.object3d.getObjectByName('select').visible = ptrn.isSelected;
+                    ptrn.object3d.rotation.z = TWO_PI * (-ptrn.position / ptrn.duration);
                 }
             },
             

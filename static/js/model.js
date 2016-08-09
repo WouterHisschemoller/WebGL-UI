@@ -14,23 +14,15 @@ window.WH = window.WH || {};
              */
             createPattern = function(specs) {
                 var ptrn = {
-                    x: specs.x || 0,
-                    y: specs.y || 0,
-                    x: specs.z || 0,
                     position3d: specs.position3d || null,
-                    object3d: null,
-                    isSelected: false,
+                    object3d: specs.object3d || null,
                     
                     // position and duration within the pattern
                     position: specs.position || 0,
-                    duration: specs.duration || 1000
+                    duration: specs.duration || 1000,
+                    
+                    isSelected: false
                 };
-                
-                if (ptrn.position3d) {
-                    ptrn.x = ptrn.position3d.x;
-                    ptrn.y = ptrn.position3d.y;
-                    ptrn.z = ptrn.position3d.z;
-                }
                 
                 patterns.push(ptrn);
             },
