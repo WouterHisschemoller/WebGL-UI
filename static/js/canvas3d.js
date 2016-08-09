@@ -177,6 +177,7 @@ window.WH = window.WH || {};
                 // create a new pattern at the found position
                 model.createPattern({
                     object3d: object3d,
+                    pointer3d: object3d.getObjectByName('pointer'),
                     position3d: position3d,
                     duration: 1000 + Math.floor(Math.random() * 1000)
                 });
@@ -251,7 +252,7 @@ window.WH = window.WH || {};
                 selectCircle.scale.set(0.2, 0.2, 1);
                 selectCircle.visible = false;
                 
-                pointer.name = 'pointerPlay';
+                pointer.name = 'pointer';
                 
                 hitarea.name = 'hitarea';
                 hitarea.add(circle);
@@ -341,7 +342,7 @@ window.WH = window.WH || {};
                 for (i = 0; i < numPatterns; i++) {
                     ptrn = patterns[i];
                     ptrn.object3d.getObjectByName('select').visible = ptrn.isSelected;
-                    ptrn.object3d.rotation.z = TWO_PI * (-ptrn.position / ptrn.duration);
+                    ptrn.pointer3d.rotation.z = TWO_PI * (-ptrn.position / ptrn.duration);
                 }
             },
             

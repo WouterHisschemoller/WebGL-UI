@@ -14,8 +14,15 @@ window.WH = window.WH || {};
              */
             createPattern = function(specs) {
                 var ptrn = {
-                    position3d: specs.position3d || null,
+                    // euclidean settings
+                    steps: specs.steps || 16,
+                    pulses: specs.pulses || 4,
+                    rotation: specs.rotation || 0,
+                    euclidPattern: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+                    
                     object3d: specs.object3d || null,
+                    pointer3d: specs.pointer3d || null,
+                    position3d: specs.position3d || null,
                     
                     // position and duration within the pattern
                     position: specs.position || 0,
