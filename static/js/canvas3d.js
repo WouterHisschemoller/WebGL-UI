@@ -77,7 +77,7 @@ window.WH = window.WH || {};
             onTouchStart = function(e) {
                 var intersects, outerObject;
                 // update picking ray.
-                updateMouseRay(e, canvasRect, mouse, raycaster, camera);
+                updateMouseRay(e);
                 // get intersected objects
                 intersects = raycaster.intersectObjects(objects, true);
                 // select first wheel in the intersects
@@ -95,7 +95,7 @@ window.WH = window.WH || {};
              */
             onDoubleClick = function(e) {
                 // update picking ray.
-                updateMouseRay(e, canvasRect, mouse, raycaster, camera);
+                updateMouseRay(e);
                 // if ray intersects plane, store point in vector 'intersection'
                 if (raycaster.ray.intersectPlane(plane, intersection)) {
                     // create a new pattern at the found position
@@ -127,7 +127,7 @@ window.WH = window.WH || {};
             dragMove = function(e) {
                 e.preventDefault();
                 // update picking ray.
-                updateMouseRay(e, canvasRect, mouse, raycaster, camera);
+                updateMouseRay(e);
                 // if ray intersects plane, store point in vector 'intersection'
                 if (dragObject) {
                     if (raycaster.ray.intersectPlane(plane, intersection)) {
@@ -299,19 +299,15 @@ window.WH = window.WH || {};
             },
             
             /**
-             * Set a raycaster's ray to point from a camera to the mouse postion.
+             * Set a raycaster's ray to point from the camera to the mouse postion.
              * @param {event} mouseEvent Event rom which to get the mouse coordinates.
-             * @param {object} elementRect Rect object contains DOM element position and size.
-             * @param {object} mouseVector Vector2 contains mouse position translated to viewport.
-             * @param {object} raycaster 3D Raycaster object.
-             * @param {object} camera 3D Camera object.
              */
-            updateMouseRay = function(mouseEvent, elementRect, mouseVector, raycaster, camera) {
+            updateMouseRay = function(mouseEvent) {
                 // update mouse vector with mouse coordinated translated to viewport
-                mouseVector.x = ((mouseEvent.clientX - elementRect.left) / elementRect.width ) * 2 - 1;
-				mouseVector.y = - ((mouseEvent.clientY - elementRect.top) / elementRect.height ) * 2 + 1;
+                mouse.x = ((mouseEvent.clientX - canvasRect.left) / canvasRect.width ) * 2 - 1;
+				mouse.y = - ((mouseEvent.clientY - canvasRect.top) / canvasRect.height ) * 2 + 1;
                 // update the picking ray with the camera and mouse position
-                raycaster.setFromCamera(mouseVector, camera);
+                raycaster.setFromCamera(mouse, camera);
             },
             
             /**
