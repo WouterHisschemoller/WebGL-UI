@@ -31,7 +31,7 @@ window.WH = window.WH || {};
             doubleClickDelay = 300,
             doubleClickTimer,
             TWO_PI = Math.PI * 2,
-            defaultColor = 0xcccccc,
+            defaultColor = 0xeeeeee,
         
             /**
              * Type of events to use, touch or mouse
@@ -184,6 +184,7 @@ window.WH = window.WH || {};
                     object3d: object3d,
                     pointer3d: object3d.getObjectByName('pointer'),
                     dots3d: object3d.getObjectByName('dots'),
+                    select3d: object3d.getObjectByName('select'),
                     position3d: position3d,
                     duration: 1000 + Math.floor(Math.random() * 1000)
                 });
@@ -395,7 +396,7 @@ window.WH = window.WH || {};
                 
                 for (i = 0; i < numPatterns; i++) {
                     ptrn = patterns[i];
-                    ptrn.object3d.getObjectByName('select').visible = ptrn.isSelected;
+                    ptrn.select3d.visible = ptrn.isSelected;
                     ptrn.pointer3d.rotation.z = TWO_PI * (-ptrn.position / ptrn.duration);
                 }
             },
