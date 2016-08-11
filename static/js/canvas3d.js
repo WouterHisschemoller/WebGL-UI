@@ -54,6 +54,14 @@ window.WH = window.WH || {};
                 renderer.domElement.addEventListener(eventType.end, dragEnd);
                 // prevent system doubleclick to interfere with the custom doubleclick
                 renderer.domElement.addEventListener('dblclick', function(e) {e.preventDefault();});
+                window.addEventListener('resize', onWindowResize, false);
+            },
+            
+            onWindowResize = function() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+                canvasRect = renderer.domElement.getBoundingClientRect();
             },
             
             /**
@@ -514,6 +522,7 @@ window.WH = window.WH || {};
 
         initWorld();
         initDOMEvents();
+        onWindowResize();
         run();
 
         return that;
