@@ -23,6 +23,7 @@ window.WH = window.WH || {};
                         euclidPattern: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
                         
                         object3d: specs.object3d || null,
+                        centreCircle3d: specs.centreCircle3d || null,
                         select3d: specs.select3d || null,
                         centreDot3d: specs.centreDot3d || null,
                         pointer3d: specs.pointer3d || null,

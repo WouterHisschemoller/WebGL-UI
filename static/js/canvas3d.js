@@ -173,13 +173,21 @@ window.WH = window.WH || {};
              */
             createWheelAndPattern = function(position3d) {
                 var ptrn,
-                    object3d = wheel.clone();
+                    centreScale,
+                    selectScale,
+                    object3d = wheel.clone(),
+                    i, n, 
+                    dot, 
+                    position;
+                    
                 object3d.position.copy(position3d);
                 scene.add(object3d);
                 objects.push(object3d);
-                // create a new pattern at the found position
+                
+                // create a new pattern at the position
                 ptrn = model.createPattern({
                     object3d: object3d,
+                    centreCircle3d: object3d.getObjectByName('centreCircle'),
                     pointer3d: object3d.getObjectByName('pointer'),
                     dots3d: object3d.getObjectByName('dots'),
                     select3d: object3d.getObjectByName('select'),
@@ -189,6 +197,45 @@ window.WH = window.WH || {};
                 });
                 model.setSelectedPatternByProperty('object3d', object3d);
                 updateDots(ptrn);
+                
+                new TWEEN.Tween({scale: 0.01})
+                    .to({scale: 1.0}, 400)
+                    .onUpdate(function() {
+                            centreScale = this.scale * 0.3;
+                            selectScale = this.scale * 0.2;
+                            ptrn.centreCircle3d.scale.set(centreScale, centreScale, 1);
+                            ptrn.pointer3d.scale.set(this.scale, this.scale, 1);
+                            ptrn.select3d.scale.set(selectScale, selectScale, 1);
+                        })
+                    .start();
+                
+                n = ptrn.dots3d.children.length;
+                for (i = 0; i < n; i++) {
+                    dot = ptrn.dots3d.children[i];
+                    startupAnimateDot(dot, i * 20);
+                }
+            },
+            
+            /**
+             * Create the startup animation for a pattern wheel dot.
+             * @param {object} dot One of a pattern's ring's dots.
+             */
+            startupAnimateDot = function(dot, delay) {
+                new TWEEN.Tween({
+                        x: 0,
+                        y: 0
+                    })
+                    .to({
+                        x: dot.position.x,
+                        y: dot.position.y
+                    }, 300)
+                    .onUpdate(function() {
+                        dot.position.set(this.x, this.y, 0);
+                    })
+                    .delay(delay)
+                    .start();
+                
+                dot.position.set(0, 0, 0);
             },
             
             /**
@@ -292,7 +339,7 @@ window.WH = window.WH || {};
                     pointer = createPointer(lineMaterial),
                     dots = new THREE.Object3D();
                 
-                centreCircle.name = 'circleOutline';
+                centreCircle.name = 'centreCircle';
                 centreCircle.scale.set(0.3, 0.3, 1);
                 
                 selectCircle.name = 'select';
@@ -425,7 +472,7 @@ window.WH = window.WH || {};
              */
             drawPatternDotAnimation = function(ptrn, dot) {
                 // animate current dot in the ring
-                new TWEEN.Tween({scale: 0.17})
+                new TWEEN.Tween({scale: 0.2})
                     .to({scale: 0.10}, 300)
                     .onUpdate(function() {
                             dot.scale.set(this.scale, this.scale, 1);
