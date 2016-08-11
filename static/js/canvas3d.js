@@ -161,9 +161,7 @@ window.WH = window.WH || {};
             
             dragEnd = function(e) {
                 e.preventDefault();
-                if (INTERSECTED) {
-                    dragObject = null;
-                }
+                dragObject = null;
                 containerEl.style.cursor = 'auto';
                 controls.enabled = true;
             },
