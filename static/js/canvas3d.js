@@ -185,6 +185,7 @@ window.WH = window.WH || {};
                     pointer3d: object3d.getObjectByName('pointer'),
                     dots3d: object3d.getObjectByName('dots'),
                     select3d: object3d.getObjectByName('select'),
+                    centreDot3d: object3d.getObjectByName('centreDot'),
                     position3d: position3d,
                     duration: 1000 + Math.floor(Math.random() * 1000)
                 });
@@ -269,11 +270,12 @@ window.WH = window.WH || {};
                 
                 circleOutline = createLineCircle(lineMaterial);
                 circleFilled = createShapeCircle(lineMaterial);
-                wheel = createWheel(lineMaterial);
                 
                 dotFilled = new THREE.Object3D();
                 dotFilled.add(circleFilled.clone());
                 dotFilled.add(circleOutline.clone());
+                
+                wheel = createWheel(lineMaterial);
                 
                 // render world
                 isDirty = true;
@@ -288,6 +290,7 @@ window.WH = window.WH || {};
                 var hitarea = createShapeCircle(),
                     centreCircle = circleOutline.clone(),
                     selectCircle = circleOutline.clone(),
+                    centreDot = dotFilled.clone(),
                     pointer = createPointer(lineMaterial),
                     dots = new THREE.Object3D();
                 
@@ -298,6 +301,9 @@ window.WH = window.WH || {};
                 selectCircle.scale.set(0.2, 0.2, 1);
                 selectCircle.visible = false;
                 
+                centreDot.scale.set(0.1, 0.1, 1);
+                centreDot.name = 'centreDot';
+                
                 pointer.name = 'pointer';
                 
                 dots.name = 'dots';
@@ -306,6 +312,7 @@ window.WH = window.WH || {};
                 hitarea.material.opacity = 0.0;
                 hitarea.add(centreCircle);
                 hitarea.add(selectCircle);
+                hitarea.add(centreDot);
                 hitarea.add(pointer);
                 hitarea.add(dots);
                 return hitarea;

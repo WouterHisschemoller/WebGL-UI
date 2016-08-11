@@ -24,6 +24,7 @@ window.WH = window.WH || {};
                         
                         object3d: specs.object3d || null,
                         select3d: specs.select3d || null,
+                        centreDot3d: specs.centreDot3d || null,
                         pointer3d: specs.pointer3d || null,
                         dots3d: specs.dots3d || null,
                         position3d: specs.position3d || null,
