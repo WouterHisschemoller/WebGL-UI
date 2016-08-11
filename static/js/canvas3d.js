@@ -187,7 +187,7 @@ window.WH = window.WH || {};
                     select3d: object3d.getObjectByName('select'),
                     centreDot3d: object3d.getObjectByName('centreDot'),
                     position3d: position3d,
-                    duration: 1000 + Math.floor(Math.random() * 1000)
+                    duration: 1000 + Math.floor(Math.random() * 2000)
                 });
                 model.setSelectedPatternByProperty('object3d', object3d);
                 updateDots(ptrn);
@@ -301,8 +301,9 @@ window.WH = window.WH || {};
                 selectCircle.scale.set(0.2, 0.2, 1);
                 selectCircle.visible = false;
                 
-                centreDot.scale.set(0.1, 0.1, 1);
                 centreDot.name = 'centreDot';
+                centreDot.scale.set(0.1, 0.1, 1);
+                centreDot.visible = false;
                 
                 pointer.name = 'pointer';
                 
@@ -402,8 +403,7 @@ window.WH = window.WH || {};
                     numPatterns = patterns.length,
                     nextStartTime,
                     pulseData,
-                    dot,
-                    tween;
+                    dot;
                 
                 for (i = 0; i < numPatterns; i++) {
                     ptrn = patterns[i];
@@ -414,19 +414,40 @@ window.WH = window.WH || {};
                     if (ptrn.isNoteOn) {
                         pulseData = ptrn.pulseStartTimes[ptrn.pulseIndex];
                         dot = ptrn.dots3d.children[pulseData.index];
-                        tween = new TWEEN.Tween({
-                                scale: 0.17
-                            }).to({
-                                scale: 0.10
-                            }, 400);
-                        tween.onUpdate(function() {
-                            dot.scale.x = this.scale;
-                            dot.scale.y = this.scale;
-                        });
-                        tween.start();
+                        drawPatternDotAnimation(ptrn, dot);
                     }
                 }
             },
+            
+            /**
+             * Animate the dot in the ring that starts to play and 
+             * the centre dot of the wheel.
+             * @param {object} ptrn Pattern wheel.
+             * @param {object} dot Dot to animate in the pattern wheel ring.
+             */
+            drawPatternDotAnimation = function(ptrn, dot) {
+                // animate current dot in the ring
+                new TWEEN.Tween({scale: 0.17})
+                    .to({scale: 0.10}, 300)
+                    .onUpdate(function() {
+                            dot.scale.set(this.scale, this.scale, 1);
+                        })
+                    .start();
+                
+                // animate centre dot
+                new TWEEN.Tween({scale: 0.1})
+                    .to({scale: 0.01}, 150)
+                    .onStart(function() {
+                            ptrn.centreDot3d.visible = true;
+                        })
+                    .onUpdate(function() {
+                            ptrn.centreDot3d.scale.set(this.scale, this.scale, 1);
+                        })
+                    .onComplete(function() {
+                            ptrn.centreDot3d.visible = false;
+                        })
+                    .start();    
+            }
             
             /**
              * Run clock and watch for redraw requests.
