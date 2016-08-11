@@ -217,8 +217,8 @@ window.WH = window.WH || {};
                         dot = circleOutline.clone();
                     }
                     dot.scale.set(0.1, 0.1, 1);
-                    dot.translateX(Math.cos(rad) * radius);
-                    dot.translateY(Math.sin(rad) * radius);
+                    dot.translateX(Math.sin(rad) * radius);
+                    dot.translateY(Math.cos(rad) * radius);
                     dots.add(dot);
                 }
             },
@@ -392,12 +392,32 @@ window.WH = window.WH || {};
                     ptrn,
                     object3D,
                     i,
-                    numPatterns = patterns.length;
+                    numPatterns = patterns.length,
+                    nextStartTime,
+                    pulseData,
+                    dot,
+                    tween;
                 
                 for (i = 0; i < numPatterns; i++) {
                     ptrn = patterns[i];
                     ptrn.select3d.visible = ptrn.isSelected;
                     ptrn.pointer3d.rotation.z = TWO_PI * (-ptrn.position / ptrn.duration);
+                    
+                    // if a pulse starts, start the dot animation.
+                    if (ptrn.isNoteOn) {
+                        pulseData = ptrn.pulseStartTimes[ptrn.pulseIndex];
+                        dot = ptrn.dots3d.children[pulseData.index];
+                        tween = new TWEEN.Tween({
+                                scale: 0.17
+                            }).to({
+                                scale: 0.10
+                            }, 400);
+                        tween.onUpdate(function() {
+                            dot.scale.x = this.scale;
+                            dot.scale.y = this.scale;
+                        });
+                        tween.start();
+                    }
                 }
             },
             
@@ -410,6 +430,7 @@ window.WH = window.WH || {};
                     // isDirty = false;
                     draw();
                 // }
+                TWEEN.update();
                 controls.update();
                 renderer.render(scene, camera);
                 requestAnimationFrame(run.bind(this));
