@@ -228,7 +228,8 @@ window.WH = window.WH || {};
                     .to({
                         x: dot.position.x,
                         y: dot.position.y
-                    }, 300)
+                    }, 700)
+                    .easing(TWEEN.Easing.Elastic.Out)
                     .onUpdate(function() {
                         dot.position.set(this.x, this.y, 0);
                     })
